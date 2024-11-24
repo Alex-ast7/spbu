@@ -1,0 +1,85 @@
+#!/bin/bash
+
+show_size=false
+only_total=false
+exit_code=0
+total_size=0
+
+print_help() {
+    echo "Usage: $0 [OPTIONS] -- FILES..."
+    echo
+    echo "Options:"
+    echo "  -s          Show the total size of all files in addition to individual sizes."
+    echo "  -S          Show only the total size of all files."
+    echo "  --usage     Show a brief usage message."
+    echo "  --help      Show this help message."
+    echo
+    echo "FILES should be a list of files to process. Use -- to separate options from files."
+}
+
+print_usage() {
+    echo "Usage: $0 [OPTIONS] -- FILES..."
+}
+
+while [[ "$1" == -* && "$1" != "--" ]]; do
+    case "$1" in
+        -s)
+            show_size=true
+            ;;
+        -S)
+            only_total=true
+            ;;
+        --usage)
+            print_usage
+            exit 0
+            ;;
+        --help)
+            print_help
+            exit 0
+            ;;
+        -*)
+            echo "Error: Unsupported option $1" >&2
+            exit 2
+            ;;
+    esac
+    shift
+done
+
+if [[ "$1" == "--" ]]; then
+    shift
+fi
+
+if [[ "$#" -eq 0 ]]; then
+    echo "Error: No files specified" >&2
+    exit 2
+fi
+
+while [[ "$#" -gt 0 ]]; do
+    file="$1"
+    shift
+
+    if [[ ! -e "$file" ]]; then
+        echo "Error: File '$file' does not exist" >&2
+        exit_code=1
+        continue
+    fi
+
+    size=$(stat -c%s -- "$file" 2>/dev/null)
+    if [[ $? -ne 0 ]]; then
+        echo "Error: Unable to get size of '$file'" >&2
+        exit_code=1
+        continue
+    fi
+
+    if [[ "$only_total" == false ]]; then
+        echo "$size byte $file"
+    fi
+
+    total_size=$((total_size + size))
+done
+
+if [[ "$show_size" == true || "$only_total" == true ]]; then
+    echo "Total size: $total_size byte"
+fi
+
+exit $exit_code
