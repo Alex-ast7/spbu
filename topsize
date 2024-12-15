@@ -1,5 +1,16 @@
 #!/bin/bash
 
+show_help() {
+    echo "Использование: topsize [--help] [-h] [-N] [-s minsize] [--] [dir...]"
+    echo
+    echo "Опции:"
+    echo "  --help       Показать эту справку и выйти"
+    echo "  -N           Количество файлов для вывода (например, -10)"
+    echo "  -s minsize   Минимальный размер файла (например, -s 100k)"
+    echo "  -h           Вывод размера в человекочитаемом формате"
+    echo "  dir...       Каталог(и) для поиска, если не заданы - текущий каталог"
+    echo "  --           Разделение опций и каталога"
+}
 
 N=""
 minsize="1c"
@@ -8,6 +19,10 @@ directories=()
 
 while [[ $# -gt 0 ]]; do
     case $1 in
+        --help)
+            show_help
+            exit 0
+            ;;
         -N)
             N="$2"
             shift 2
@@ -26,6 +41,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         -*)
             echo "Неизвестная опция: $1"
+            show_help
             exit 1
             ;;
         *)
@@ -40,7 +56,6 @@ if [ ${#directories[@]} -eq 0 ]; then
 fi
 
 find_cmd="find ${directories[@]} -type f -size +$minsize -print0"
-
 if $human_readable; then
     eval $find_cmd | xargs -0 ls -lh | sort -rh -k5 | head -n ${N:-0} | awk '{print $5, $9}'
 else
